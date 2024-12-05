@@ -23,7 +23,7 @@ data:
       limit_req_zone {{ $limitReqZone.Key }} zone={{ $limitReqZone.Name }}:{{$limitReqZone.Size}} rate={{$limitReqZone.Rate}};
       {{end}}
 
-      {{range $server := .Servers}}ע
+      {{range $server := .Servers}}
       server {
             {{- if $server.SpiffeCerts}}
             listen 443 ssl;
@@ -231,8 +231,9 @@ data:
                   proxy_ssl_name {{$location.ProxySSLName}};
                   {{- end}}
                       {{- if $location.SSL}}
+                          {{- $submariner_suffix := ".svc.clusterset.local"}}
                           {{- $location_upstream_name :=  $location.Upstream.Name }}
-                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName.svc.clusterset.local $location.Rewrite}}
+                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName $submariner_suffix $location.Rewrite}}
                           {{- $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
                           {{- $isEmpty := false}}
                                     {{- range $upstream := $.Upstreams}}
@@ -251,8 +252,9 @@ data:
                   proxy_pass http://{{$proxy_pass_normal}};
                                     {{- end }}
                       {{- else}}
+                          {{- $submariner_suffix := ".svc.clusterset.local"}}                      
                           {{- $location_upstream_name :=  $location.Upstream.Name }}
-                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName.svc.clusterset.local $location.Rewrite}}
+                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName $submariner_suffix $location.Rewrite}}
                           {{- $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
                           {{- $isEmpty := false}}
                                     {{- range $upstream := $.Upstreams}}
