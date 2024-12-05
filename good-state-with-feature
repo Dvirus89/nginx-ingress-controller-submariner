@@ -14,13 +14,7 @@ data:
             {{$upstream.LBMethod}};
             {{- end}}
             {{- range $server := $upstream.UpstreamServers}}
-            {{ if eq $server.Address "127.0.0.1:8181" }}
-                  server {{$server.Address}} max_fails={{$server.MaxFails}} fail_timeout={{$server.FailTimeout}} max_conns={{$server.MaxConns}};
-            {{ else }}
-                  server {{$server.Address}} max_fails={{$server.MaxFails}} fail_timeout={{$server.FailTimeout}} max_conns={{$server.MaxConns}};
-            {{ end }}
-            {{ end }}
-
+            server {{$server.Address}} max_fails={{$server.MaxFails}} fail_timeout={{$server.FailTimeout}} max_conns={{$server.MaxConns}};{{ end }}
             {{- if $.Keepalive}}keepalive {{$.Keepalive}};{{end}}
       }
       {{end -}}
@@ -29,7 +23,7 @@ data:
       limit_req_zone {{ $limitReqZone.Key }} zone={{ $limitReqZone.Name }}:{{$limitReqZone.Size}} rate={{$limitReqZone.Rate}};
       {{end}}
 
-      {{range $server := .Servers}}
+      {{range $server := .Servers}}ע
       server {
             {{- if $server.SpiffeCerts}}
             listen 443 ssl;
@@ -237,31 +231,45 @@ data:
                   proxy_ssl_name {{$location.ProxySSLName}};
                   {{- end}}
                       {{- if $location.SSL}}
-                          proxy_pass https://{{$location.Upstream.Name}}{{$location.Rewrite}};
-                      {{- else}}
-                          {{ $location_upstream_name :=  $location.Upstream.Name }}
-                          {{ $proxy_pass_empty :=  printf "%s%s" $location.ServiceName $location.Rewrite}}
-                          {{ $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
-                          # CHANGES proxy_pass http://{{$location.ServiceName}}{{$location.Rewrite}};
-                          ## CHANGES HERE - START
-                                    # {{   printf "%s%s%s" $location_upstream_name $proxy_pass_empty $proxy_pass_normal }}
-
+                          {{- $location_upstream_name :=  $location.Upstream.Name }}
+                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName.svc.clusterset.local $location.Rewrite}}
+                          {{- $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
+                          {{- $isEmpty := false}}
                                     {{- range $upstream := $.Upstreams}}
-                                        {{ $isEmpty := false}}
-                                        {{ $upstreamName := $upstream.Name }}
+                                        {{- $upstreamName := $upstream.Name }}
                                         {{- range $server := $upstream.UpstreamServers}}
-                                              {{ if and (eq $location_upstream_name  $upstreamName) (eq $server.Address "127.0.0.1:8181")}} 
-                                                   {{ $isEmpty := true }}
-                                              {{ else }}
-                                        {{ end }}
-                                        {{ if $isEmpty }}
-                                            proxy_pass http://$proxy_pass_empty;
-                                        {{ else }}
-                                            proxy_pass http://$proxy_pass_normal;
-                                        {{ end }}
-                                    {{ end }}
-
-                          ## CHANGES HERE - END
+                                              {{- if and (eq $location_upstream_name  $upstreamName) (eq $server.Address "127.0.0.1:8181")}} 
+                                                   {{- $isEmpty = true }}
+                                              {{- end }}
+                                        {{- end }}
+                                    {{- end }}                                    
+                                    {{- if $isEmpty }}
+                  # empty upstream, use dns instead                  
+                  proxy_pass http://{{$proxy_pass_empty}};
+                                    {{- else }}
+                  # noraml upstream, no changes
+                  proxy_pass http://{{$proxy_pass_normal}};
+                                    {{- end }}
+                      {{- else}}
+                          {{- $location_upstream_name :=  $location.Upstream.Name }}
+                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName.svc.clusterset.local $location.Rewrite}}
+                          {{- $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
+                          {{- $isEmpty := false}}
+                                    {{- range $upstream := $.Upstreams}}
+                                        {{- $upstreamName := $upstream.Name }}
+                                        {{- range $server := $upstream.UpstreamServers}}
+                                              {{- if and (eq $location_upstream_name  $upstreamName) (eq $server.Address "127.0.0.1:8181")}} 
+                                                   {{- $isEmpty = true }}
+                                              {{- end }}
+                                        {{- end }}
+                                    {{- end }}                                    
+                                    {{- if $isEmpty }}
+                  # empty upstream, use dns instead                  
+                  proxy_pass http://{{$proxy_pass_empty}};
+                                    {{- else }}
+                  # noraml upstream, no changes
+                  proxy_pass http://{{$proxy_pass_normal}};
+                                    {{- end }}
                       {{- end}}
                   {{- end}}
 
