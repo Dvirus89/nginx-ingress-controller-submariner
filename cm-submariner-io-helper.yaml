@@ -241,14 +241,19 @@ data:
                                         {{- range $server := $upstream.UpstreamServers}}
                                               {{- if and (eq $location_upstream_name  $upstreamName) (eq $server.Address "127.0.0.1:8181")}} 
                                                    {{- $isEmpty = true }}
+                                                   {{- $svc_port := "443"}}
+                                                   {{- range $i, $el := split $upstreamName "-"}}
+                                                      {{- $svc_port = $el}}
+                                                   {{- end}}
+                                                   {{- $proxy_pass_empty = replaceAll $proxy_pass_empty "PORTNUMBER" $svc_port}}
                                               {{- end }}
                                         {{- end }}
                                     {{- end }}                                    
                                     {{- if $isEmpty }}
                   # empty upstream, use dns instead
-                  {{printf "set $var_%s %s;" $location_upstream_name $proxy_pass_empty}}
-                  {{printf "proxy_pass http://$var_%s;" $location_upstream_name}}             
-                  #proxy_pass https://{{$proxy_pass_empty}};
+                  {{ printf "set $sub_%s \"%s\";" (replaceAll $location.ServiceName "-" "_") $proxy_pass_empty}}
+                  {{ printf "proxy_pass https://$sub_%s;" (replaceAll $location.ServiceName "-" "_")}}                
+                  #Ommited by submariner helper: proxy_pass https://{{$proxy_pass_normal}};
                                     {{- else }}
                   # noraml upstream, no changes
                   proxy_pass https://{{$proxy_pass_normal}};
@@ -256,7 +261,7 @@ data:
                       {{- else}}
                           {{- $submariner_suffix := ".svc.clusterset.local"}}                      
                           {{- $location_upstream_name :=  $location.Upstream.Name }}
-                          {{- $proxy_pass_empty :=  printf "%s%s%s" $location.ServiceName $submariner_suffix $location.Rewrite}}
+                          {{- $proxy_pass_empty :=  printf "%s%s%s%s" $location.ServiceName $submariner_suffix ":PORTNUMBER" $location.Rewrite}}
                           {{- $proxy_pass_normal :=  printf "%s%s" $location.Upstream.Name $location.Rewrite}}
                           {{- $isEmpty := false}}
                                     {{- range $upstream := $.Upstreams}}
@@ -264,14 +269,19 @@ data:
                                         {{- range $server := $upstream.UpstreamServers}}
                                               {{- if and (eq $location_upstream_name  $upstreamName) (eq $server.Address "127.0.0.1:8181")}} 
                                                    {{- $isEmpty = true }}
+                                                   {{- $svc_port := "80"}}
+                                                   {{- range $i, $el := split $upstreamName "-"}}
+                                                      {{- $svc_port = $el}}
+                                                   {{- end}}
+                                                   {{- $proxy_pass_empty = replaceAll $proxy_pass_empty "PORTNUMBER" $svc_port}}
                                               {{- end }}
                                         {{- end }}
                                     {{- end }}                                    
                                     {{- if $isEmpty }}
                   # empty upstream, use dns instead        
-                  {{printf "set $v_%s \"%s\";" (replaceAll $location_upstream_name "-" "_") $proxy_pass_empty}}
-                  {{printf "proxy_pass http://$v_%s;" (replaceAll $location_upstream_name "-" "_")}}                
-                  #proxy_pass http://{{$proxy_pass_normal}};
+                  {{ printf "set $sub_%s \"%s\";" (replaceAll $location.ServiceName "-" "_") $proxy_pass_empty}}
+                  {{ printf "proxy_pass http://$sub_%s;" (replaceAll $location.ServiceName "-" "_")}}                
+                  #Ommited by submariner helper: proxy_pass http://{{$proxy_pass_normal}};
                                     {{- else }}
                   # noraml upstream, no changes
                   proxy_pass http://{{$proxy_pass_normal}};
