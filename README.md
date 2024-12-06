@@ -24,4 +24,5 @@ Original NGINX ingress controller template file:
 https://github.com/nginxinc/kubernetes-ingress/blob/v3.7.2/internal/configs/version1/nginx.ingress.tmpl
 
 Most of the changes are here:
-![Changes Focus](https://github.com/user-attachments/assets/e49399ad-d82c-4f79-94e7-8e7a53be0381)
+![image](https://github.com/user-attachments/assets/d306a242-e4b0-48ec-bd26-d8373d76ebe8)
+
