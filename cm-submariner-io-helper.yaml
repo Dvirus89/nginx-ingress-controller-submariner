@@ -245,11 +245,13 @@ data:
                                         {{- end }}
                                     {{- end }}                                    
                                     {{- if $isEmpty }}
-                  # empty upstream, use dns instead                  
-                  proxy_pass http://{{$proxy_pass_empty}};
+                  # empty upstream, use dns instead
+                  {{printf "set $var_%s %s;" $location_upstream_name $proxy_pass_empty}}
+                  {{printf "proxy_pass http://$var_%s;" $location_upstream_name}}             
+                  #proxy_pass https://{{$proxy_pass_empty}};
                                     {{- else }}
                   # noraml upstream, no changes
-                  proxy_pass http://{{$proxy_pass_normal}};
+                  proxy_pass https://{{$proxy_pass_normal}};
                                     {{- end }}
                       {{- else}}
                           {{- $submariner_suffix := ".svc.clusterset.local"}}                      
@@ -266,8 +268,10 @@ data:
                                         {{- end }}
                                     {{- end }}                                    
                                     {{- if $isEmpty }}
-                  # empty upstream, use dns instead                  
-                  proxy_pass http://{{$proxy_pass_empty}};
+                  # empty upstream, use dns instead        
+                  {{printf "set $v_%s \"%s\";" (replaceAll $location_upstream_name "-" "_") $proxy_pass_empty}}
+                  {{printf "proxy_pass http://$v_%s;" (replaceAll $location_upstream_name "-" "_")}}                
+                  #proxy_pass http://{{$proxy_pass_normal}};
                                     {{- else }}
                   # noraml upstream, no changes
                   proxy_pass http://{{$proxy_pass_normal}};
